@@ -16,7 +16,7 @@
 
 // --- Глобальные объекты ---
 M5Canvas canvas(&M5Cardputer.Display);
-IRsend IrSender;
+// IRsend IrSender; // УДАЛЕНО: Библиотека IRremote создает его сама
 
 // --- Состояния UI ---
 enum ScreenState { MAIN_MENU, SUB_MENU_WIFI, SUB_MENU_BLE, SUB_MENU_IR, SUB_MENU_SETTINGS };
@@ -79,9 +79,9 @@ void setup() {
   WiFi.disconnect();
   esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
 
-  // BLE
+  // BLE (убрана неиспользуемая переменная pServer, чтобы не было warning)
   BLEDevice::init("MiniHack");
-  BLEServer* pServer = BLEDevice::createServer();
+  BLEDevice::createServer();
   pAdvertising = BLEDevice::getAdvertising();
 
   drawUI();
@@ -238,12 +238,14 @@ void sendBleSpam(int mode) {
   if (mode == 1) {
     // AppleJuice: эмуляция AirPods Pro
     uint8_t appleData[] = {0x1E, 0xFF, 0x4C, 0x00, 0x07, 0x19, 0x07, 0x0B, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    advData.addData(std::string((char*)appleData, sizeof(appleData)));
+    // ИСПРАВЛЕНО: Передаем char* и размер вместо std::string
+    advData.addData((char*)appleData, sizeof(appleData));
     name = "AirPods Pro";
   } else if (mode == 2) {
     // SwiftPair: эмуляция Microsoft Bluetooth Mouse
     uint8_t swiftData[] = {0x06, 0xFF, 0x06, 0x00, 0x03, 0x00, 0x00};
-    advData.addData(std::string((char*)swiftData, sizeof(swiftData)));
+    // ИСПРАВЛЕНО: Передаем char* и размер вместо std::string
+    advData.addData((char*)swiftData, sizeof(swiftData));
     name = "Microsoft Mouse";
   } else {
     return;
@@ -263,7 +265,8 @@ void sendIrCode(int brand) {
       IrSender.sendSAMSUNG(0xE0E040BF, 32);
       break;
     case 1: // LG (NEC)
-      IrSender.sendNEC(0x20DF10EF, 32);
+      // ИСПРАВЛЕНО: Используем sendNECMSB чтобы убрать warning об устаревшей функции
+      IrSender.sendNECMSB(0x20DF10EF, 32);
       break;
     case 2: // Sony
       IrSender.sendSony(0xA90, 12, 2);
